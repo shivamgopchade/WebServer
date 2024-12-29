@@ -20,6 +20,7 @@ public class HttpConnectionHandler extends Thread{
     public HttpConnectionHandler(Socket socket) throws IOException {
 
         this.socket=socket;
+        this.socket.setSoTimeout(5000);
         this.inputStream=socket.getInputStream();
         this.outputStream=socket.getOutputStream();
     }

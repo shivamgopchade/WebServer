@@ -5,6 +5,7 @@ import com.shivam.httpServer.Exceptions.HttpParsingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,10 +20,11 @@ public class HttpParser {
     private static final int COMMA=0x2C; // 44
 
     public HttpRequest parseHttpRequest(InputStream is) throws IOException, HttpParsingException {
+        HttpRequest httpRequest=new HttpRequest();
         try{
             InputStreamReader inputStreamReader=new InputStreamReader(is, StandardCharsets.US_ASCII);
 
-            HttpRequest httpRequest=new HttpRequest();
+
 
             parseRequestLine(inputStreamReader,httpRequest);
             parseHeaders(inputStreamReader,httpRequest);
@@ -30,7 +32,11 @@ public class HttpParser {
                 parseBody(inputStreamReader,httpRequest);
 
             return httpRequest;
-        }catch (Exception e){
+        }catch (SocketTimeoutException socketTimeoutException){
+            //ignore and return hhtpreq
+            return httpRequest;
+        }
+        catch (Exception e){
             throw new HttpParsingException(HttpStatusCode.CLIENT_ERROR_400_BAD_REQUEST);
         }
 
@@ -119,7 +125,7 @@ public class HttpParser {
 
     // body parsing for content-type json with ',' separated
     private void parseBody(InputStreamReader reader,HttpRequest httpRequest) throws IOException, HttpParsingException {
-        int _byte=0;
+        int _byte;
         StringBuilder processingBuffer = new StringBuilder();
         while((_byte=reader.read())!=-1){
             if(_byte==OPEN_CURL || _byte==CR || _byte==LF || _byte==SP){
@@ -134,6 +140,7 @@ public class HttpParser {
                 processingBuffer.append((char)_byte);
             }
         }
+        System.out.println("byte:"+_byte);
     }
 
     private void processBody(String keyVal,HttpRequest httpRequest) throws HttpParsingException {
